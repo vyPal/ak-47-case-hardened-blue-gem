@@ -48,6 +48,7 @@ class CardController extends Controller
 
         return Inertia::render('cards/Index', [
             'cards' => $cards,
+            'createdCards' => Auth::user()->cards()->get(),
             'uploadAllowed' => Card::isUploadAllowed() || Auth::user()->is_admin,
             'isWeekday' => Card::isWeekday(),
         ]);

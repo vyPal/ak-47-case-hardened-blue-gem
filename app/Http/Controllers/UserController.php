@@ -135,6 +135,7 @@ class UserController extends Controller
             ],
             'collection' => [
                 'cards' => $cardOwnerships,
+                'createdCards' => $user->cards()->get(),
                 'total_cards' => $totalCards,
                 'avg_rarity' => round($avgRarity, 1),
                 'rarity_distribution' => $rarityDistribution,

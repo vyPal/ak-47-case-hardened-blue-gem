@@ -4,7 +4,7 @@
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="mb-6 flex items-center justify-between">
                     <h1 class="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-3xl font-extrabold text-transparent">
-                        My Cards
+                        My Card Collection
                     </h1>
 
                     <Link
@@ -24,117 +24,177 @@
                     <div v-else class="text-sm text-gray-400">Card uploads are only allowed Monday through Friday</div>
                 </div>
 
+                <!-- Collection Stats -->
+                <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 md:gap-6">
+                    <div class="flex flex-col rounded-lg bg-gray-800 p-4 sm:p-6">
+                        <h3 class="mb-1 text-sm text-gray-400">Total Cards</h3>
+                        <div class="text-xl font-bold text-white sm:text-2xl">{{ totalCards }}</div>
+                        <div class="mt-auto pt-2 text-sm text-gray-500">Cards in collection</div>
+                    </div>
+
+                    <div class="flex flex-col rounded-lg bg-gray-800 p-4 sm:p-6">
+                        <h3 class="mb-1 text-sm text-gray-400">Created Cards</h3>
+                        <div class="text-xl font-bold text-white sm:text-2xl">{{ createdCards.length }}</div>
+                        <div class="mt-auto pt-2 text-sm text-gray-500">Cards you've created</div>
+                    </div>
+
+                    <div class="flex flex-col rounded-lg bg-gray-800 p-4 sm:p-6">
+                        <h3 class="mb-1 text-sm text-gray-400">Average Rarity</h3>
+                        <div class="flex items-center text-xl font-bold text-white sm:text-2xl">
+                            <Star class="mr-1 h-4 w-4 text-yellow-400 sm:h-5 sm:w-5" />
+                            {{ avgRarity }}/10
+                        </div>
+                        <div class="mt-auto pt-2 text-sm text-gray-500">Higher is rarer</div>
+                    </div>
+                </div>
+
                 <!-- Filters -->
-                <div class="mb-6 rounded-lg bg-gray-800 p-4">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-300">Status</label>
-                            <select v-model="filters.status" class="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white">
-                                <option value="">All</option>
+                <div class="mb-8">
+                    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                        <div class="flex flex-wrap gap-2 sm:gap-4">
+                            <!-- Status Filter -->
+                            <select
+                                v-model="filters.status"
+                                class="rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                            >
+                                <option value="">All Status</option>
                                 <option value="draft">Draft</option>
                                 <option value="voting">In Voting</option>
                                 <option value="minted">Minted</option>
                             </select>
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-300">Sort By</label>
-                            <select v-model="filters.sort" class="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white">
+
+                            <!-- Sort Filter -->
+                            <select
+                                v-model="filters.sort"
+                                class="rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                            >
                                 <option value="created_desc">Newest First</option>
                                 <option value="created_asc">Oldest First</option>
-                                <option value="name">Name</option>
+                                <option value="name">Sort by Name</option>
                                 <option value="rarity_desc">Highest Rarity</option>
                                 <option value="rarity_asc">Lowest Rarity</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-gray-300">Search</label>
+
+                        <!-- Search -->
+                        <div class="relative max-w-xs flex-1">
                             <input
                                 type="text"
                                 v-model="filters.search"
                                 placeholder="Search cards..."
-                                class="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
+                                class="w-full rounded-md border border-gray-600 bg-gray-800 py-1.5 pr-3 pl-9 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-500 focus:outline-none"
                             />
+                            <Search class="absolute top-1.5 left-2.5 h-4 w-4 text-gray-400" />
                         </div>
                     </div>
                 </div>
 
-                <!-- Cards Grid -->
-                <div v-if="filteredCards.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    <div
-                        v-for="card in filteredCards"
-                        :key="card.id"
-                        class="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 transition-colors hover:border-purple-500"
-                    >
-                        <Link :href="route('cards.show', card.id)">
-                            <!-- Card Image -->
-                            <div class="aspect-w-3 aspect-h-4 bg-gray-900">
-                                <img :src="`/storage/${card.image_path}`" :alt="card.name" class="h-full w-full object-cover" />
-                            </div>
-
-                            <!-- Card Info -->
-                            <div class="p-4">
-                                <div class="mb-2 flex items-center justify-between">
-                                    <h3 class="truncate text-lg font-bold text-white">{{ card.name }}</h3>
-                                    <StatusBadge :status="card.status" />
+                <!-- Owned Cards Section -->
+                <div>
+                    <h2 class="mb-4 text-xl font-bold text-white">Cards I Own</h2>
+                    <div v-if="ownedCards.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        <div
+                            v-for="card in ownedCards"
+                            :key="card.id"
+                            class="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 transition-colors hover:border-purple-500"
+                        >
+                            <Link :href="route('cards.show', card.id)">
+                                <!-- Card Image -->
+                                <div class="aspect-w-3 aspect-h-4 bg-gray-900">
+                                    <img :src="`/storage/${card.image_path}`" :alt="card.name" class="h-full w-full object-cover" />
                                 </div>
 
-                                <div v-if="card.status === 'minted'" class="mt-2 space-y-1">
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-gray-400">Rarity:</span>
-                                        <span class="text-white">{{ card.rarity }}/10</span>
+                                <!-- Card Info -->
+                                <div class="p-4">
+                                    <div class="mb-2 flex items-center justify-between">
+                                        <h3 class="truncate text-lg font-bold text-white">{{ card.name }}</h3>
+                                        <StatusBadge :status="card.status" />
                                     </div>
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-gray-400">Copies:</span>
-                                        <span class="text-white">#{{ card.serial_numbers?.join(', #') }}</span>
+
+                                    <div v-if="card.status === 'minted'" class="mt-2 space-y-1">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-400">Rarity:</span>
+                                            <span class="text-white">{{ card.rarity }}/10</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-400">Copies:</span>
+                                            <span class="text-white">#{{ card.serial_numbers?.join(', #') }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center justify-between text-sm">
+                                        <span class="text-gray-400">Created:</span>
+                                        <span class="text-gray-300">{{ formatDate(card.created_at) }}</span>
                                     </div>
                                 </div>
+                            </Link>
+                        </div>
+                    </div>
+                    <div v-else class="rounded-lg bg-gray-800 p-4 text-center text-gray-400 sm:p-6">You don't own any cards yet.</div>
+                </div>
 
-                                <div class="mt-4 flex items-center justify-between text-sm">
-                                    <span class="text-gray-400">Created:</span>
-                                    <span class="text-gray-300">{{ formatDate(card.created_at) }}</span>
+                <!-- Created Cards Section -->
+                <div class="mt-8 mb-8">
+                    <h2 class="mb-4 text-xl font-bold text-white">Cards I Created</h2>
+                    <div v-if="createdCards.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        <div
+                            v-for="card in createdCards"
+                            :key="card.id"
+                            class="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 transition-colors hover:border-purple-500"
+                        >
+                            <Link :href="route('cards.show', card.id)">
+                                <!-- Card Image -->
+                                <div class="aspect-w-3 aspect-h-4 bg-gray-900">
+                                    <img :src="`/storage/${card.image_path}`" :alt="card.name" class="h-full w-full object-cover" />
                                 </div>
-                            </div>
-                        </Link>
 
-                        <!-- Quick Actions -->
-                        <div class="bg-gray-850 border-t border-gray-700 px-4 py-3">
-                            <div class="flex items-center justify-between">
-                                <div v-if="card.status === 'draft'">
-                                    <button @click="submitForVoting(card)" class="text-sm text-purple-400 transition-colors hover:text-purple-300">
-                                        Submit for Voting
+                                <!-- Card Info -->
+                                <div class="p-4">
+                                    <div class="mb-2 flex items-center justify-between">
+                                        <h3 class="truncate text-lg font-bold text-white">{{ card.name }}</h3>
+                                        <StatusBadge :status="card.status" />
+                                    </div>
+
+                                    <div v-if="card.status === 'minted'" class="mt-2 space-y-1">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-400">Rarity:</span>
+                                            <span class="text-white">{{ card.rarity }}/10</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center justify-between text-sm">
+                                        <span class="text-gray-400">Created:</span>
+                                        <span class="text-gray-300">{{ formatDate(card.created_at) }}</span>
+                                    </div>
+                                </div>
+                            </Link>
+
+                            <!-- Quick Actions -->
+                            <div class="bg-gray-850 border-t border-gray-700 px-4 py-3">
+                                <div class="flex items-center justify-between">
+                                    <div v-if="card.status === 'draft'">
+                                        <button
+                                            @click="submitForVoting(card)"
+                                            class="text-sm text-purple-400 transition-colors hover:text-purple-300"
+                                        >
+                                            Submit for Voting
+                                        </button>
+                                    </div>
+                                    <div v-else-if="card.status === 'voting'" class="text-sm text-gray-400">In voting phase</div>
+                                    <div v-else class="text-sm text-gray-400">{{ card.minted_count }} Minted</div>
+
+                                    <button
+                                        v-if="card.status === 'draft'"
+                                        @click="deleteCard(card)"
+                                        class="text-sm text-red-400 transition-colors hover:text-red-300"
+                                    >
+                                        Delete
                                     </button>
                                 </div>
-                                <div v-else-if="card.status === 'voting'" class="text-sm text-gray-400">In voting phase</div>
-                                <div v-else class="text-sm text-gray-400">{{ card.minted_count }} Minted</div>
-
-                                <button
-                                    v-if="card.status === 'draft'"
-                                    @click="deleteCard(card)"
-                                    class="text-sm text-red-400 transition-colors hover:text-red-300"
-                                >
-                                    Delete
-                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Empty State -->
-                <div v-else class="py-12 text-center">
-                    <div class="text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-4 h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                        </svg>
-                        <h3 class="mb-2 text-xl font-medium">No cards found</h3>
-                        <p class="text-gray-500">
-                            {{ filters.search || filters.status ? 'Try adjusting your filters' : 'Start by uploading your first card' }}
-                        </p>
-                    </div>
+                    <div v-else class="rounded-lg bg-gray-800 p-4 text-center text-gray-400 sm:p-6">You haven't created any cards yet.</div>
                 </div>
             </div>
         </div>
@@ -146,6 +206,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import DevModeBadge from '@/components/DevModeBadge.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Link, router } from '@inertiajs/vue3';
+import { Search, Star } from 'lucide-vue-next';
 import { computed, defineComponent, ref } from 'vue';
 
 export default defineComponent({
@@ -153,12 +214,17 @@ export default defineComponent({
         AppLayout,
         DevModeBadge,
         Link,
+        Search,
         StatusBadge,
-        DevModeBadge,
+        Star,
     },
 
     props: {
         cards: {
+            type: Array,
+            required: true,
+        },
+        createdCards: {
             type: Array,
             required: true,
         },
@@ -179,8 +245,8 @@ export default defineComponent({
             search: '',
         });
 
-        const filteredCards = computed(() => {
-            let result = [...props.cards];
+        const filterAndSortCards = (cards) => {
+            let result = [...cards];
 
             // Apply status filter
             if (filters.value.status) {
@@ -215,6 +281,14 @@ export default defineComponent({
             });
 
             return result;
+        };
+
+        const createdCards = computed(() => {
+            return filterAndSortCards(props.createdCards);
+        });
+
+        const ownedCards = computed(() => {
+            return filterAndSortCards(props.cards);
         });
 
         const submitForVoting = (card) => {
@@ -241,7 +315,15 @@ export default defineComponent({
 
         return {
             filters,
-            filteredCards,
+            createdCards,
+            ownedCards,
+            totalCards: computed(() => props.cards.length),
+            avgRarity: computed(() => {
+                const cards = props.cards.filter((card) => card.rarity);
+                if (!cards.length) return 0;
+                const avg = cards.reduce((sum, card) => sum + card.rarity, 0) / cards.length;
+                return avg.toFixed(1);
+            }),
             submitForVoting,
             deleteCard,
             formatDate,
