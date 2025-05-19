@@ -276,16 +276,25 @@ const ownedCards = computed(() => {
 });
 
 const createdCards = computed(() => {
-    if (!props.collection.cards) return [];
+    if (!props.collection.createdCards) return [];
 
     // Filter cards that the user created
-    return sortCardList(props.collection.createdCards);
+    return sortCCardList(props.collection.createdCards);
 });
 
-const sortedCards = computed(() => {
-    if (!props.collection.cards) return [];
-    return sortCardList([...props.collection.cards]);
-});
+// Helper function to sort cards
+function sortCCardList(cards) {
+    switch (sortBy.value) {
+        case 'name':
+            return cards.sort((a, b) => a.name.localeCompare(b.name));
+        case 'rarity-desc':
+            return cards.sort((a, b) => (b.rarity || 0) - (a.rarity || 0));
+        case 'rarity-asc':
+            return cards.sort((a, b) => (a.rarity || 0) - (b.rarity || 0));
+        default:
+            return cards;
+    }
+}
 
 // Helper function to sort cards
 function sortCardList(cards) {
