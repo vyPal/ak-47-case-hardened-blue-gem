@@ -83,7 +83,7 @@ class CardController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'required|image|max:5120', // 5MB max
+            'image' => 'required|image|max:15360', // 15MB max
         ]);
 
         // Store the image
@@ -192,7 +192,7 @@ class CardController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:5120', // 5MB max
+            'image' => 'nullable|image|max:15360', // 15MB max
         ]);
 
         $card->name = $request->name;
@@ -426,18 +426,18 @@ class CardController extends Controller
 
             // Get the total number of users on the platform
             $totalUsers = User::count();
-            
+
             // Calculate how many copies to mint based on rarity and user count
             // Rarity 10 (highest): ~1-2% of users will get a copy
             // Rarity 1 (lowest): ~80% of users will get a copy
             // Scale other rarities proportionally
             $percentOfUsers = 0.8 - (($avgRarity - 1) * 0.08); // 80% for rarity 1, down to 2% for rarity 10
             $baseCount = max(1, ceil($totalUsers * $percentOfUsers));
-            
+
             // Add some randomness within reasonable bounds (±10% of calculated amount)
             $randomVariation = rand(-$baseCount * 0.1, $baseCount * 0.1);
             $mintCount = max(1, round($baseCount + $randomVariation));
-            
+
             // Ensure highest rarity cards are truly rare
             if ($avgRarity >= 9) {
                 $mintCount = min($mintCount, ceil($totalUsers * 0.02)); // Max 2% of users for very rare cards
@@ -451,12 +451,12 @@ class CardController extends Controller
             // Get all users
             $allUsers = User::all();
             $serialNumber = 1;
-            
+
             if ($allUsers->isNotEmpty()) {
                 // Create a distribution pool with weights for each user
                 $pool = [];
                 $totalWeight = 0;
-                
+
                 foreach ($allUsers as $user) {
                     // Calculate user weight based on card collection
                     $avgCardRarity = $user->ownedCards()
@@ -465,30 +465,30 @@ class CardController extends Controller
 
                     // Base weight - higher for users with lower average rarity
                     $weight = max(0.1, 11 - $avgCardRarity);
-                    
+
                     // Creator gets 50% higher chance (1.5x weight)
                     if ($user->id === $card->user_id) {
                         $weight *= 1.5;
                     }
-                    
+
                     $pool[] = [
                         'user' => $user,
                         'weight' => $weight
                     ];
-                    
+
                     $totalWeight += $weight;
                 }
-                
+
                 // Keep track of which users received how many copies
                 $distributedCopies = [];
-                
+
                 // Distribute all copies randomly but weighted
                 for ($i = 0; $i < $mintCount; $i++) {
                     // Select a random user based on weights
                     $rand = mt_rand(1, 10000) / 10000 * $totalWeight;
                     $currentWeight = 0;
                     $selectedUser = null;
-                    
+
                     foreach ($pool as $entry) {
                         $currentWeight += $entry['weight'];
                         if ($rand <= $currentWeight) {
@@ -496,20 +496,20 @@ class CardController extends Controller
                             break;
                         }
                     }
-                    
+
                     // If no user was selected (shouldn't happen), pick one randomly
                     if (!$selectedUser) {
                         $selectedUser = $allUsers->random();
                     }
-                    
+
                     // Add this card to the user's distributed copies
                     if (!isset($distributedCopies[$selectedUser->id])) {
                         $distributedCopies[$selectedUser->id] = [];
                     }
-                    
+
                     $distributedCopies[$selectedUser->id][] = $serialNumber++;
                 }
-                
+
                 // Create ownership records for users who received copies
                 foreach ($distributedCopies as $userId => $serialNumbers) {
                     CardOwnership::create([
@@ -519,7 +519,7 @@ class CardController extends Controller
                         'serial_numbers' => $serialNumbers,
                     ]);
                 }
-                
+
                 // Not every user will get a copy, and some might get multiple copies
                 // This is by design as per the requirements
             }
