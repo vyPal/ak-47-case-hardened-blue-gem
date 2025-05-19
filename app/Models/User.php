@@ -6,6 +6,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Invitation;
+use App\Models\CardOwnership;
+use App\Models\Card;
 
 class User extends Authenticatable
 {
@@ -21,6 +24,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+        'invitation_count',
+        'invitation_limit',
     ];
 
     /**
@@ -43,6 +49,65 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Get trades initiated by this user
+     */
+    public function initiatedTrades()
+    {
+        return $this->hasMany(Trade::class, 'initiator_id');
+    }
+
+    /**
+     * Get trades received by this user
+     */
+    public function receivedTrades()
+    {
+        return $this->hasMany(Trade::class, 'recipient_id');
+    }
+
+    /**
+     * Check if the user has available invitations
+     */
+    public function hasAvailableInvitations(): bool
+    {
+        return $this->invitation_count > 0;
+    }
+
+    /**
+     * Decrement the invitation count
+     */
+    public function decrementInvitationCount(): void
+    {
+        if ($this->invitation_count > 0) {
+            $this->decrement('invitation_count');
+        }
+    }
+
+    /**
+     * Get the invitations created by this user
+     */
+    public function invitations()
+    {
+        return $this->hasMany(Invitation::class);
+    }
+
+    /**
+     * Get the cards uploaded by this user
+     */
+    public function cards()
+    {
+        return $this->hasMany(Card::class);
+    }
+
+    /**
+     * Get the cards owned by this user
+     */
+    public function ownedCards()
+    {
+        return $this->hasMany(CardOwnership::class);
     }
 }
